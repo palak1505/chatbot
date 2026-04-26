@@ -1,59 +1,65 @@
-# 🤖 AI Mascot Assistant Backend
+# 🤖 AI Mascot Assistant
 
-A modular AI backend built with FastAPI that combines:
+An AI-powered assistant that combines:
 
-* 🟢 Guide Mode (product assistant / onboarding)
-* 🔵 RAG Mode (document-based Q&A)
+* 🟢 Guided onboarding (Mascot Mode)
+* 🔵 Document-based Q&A (RAG Mode)
 
 ---
 
 ## 🚀 Features
 
 * FastAPI backend
-* Document upload & processing
+* Basic UI (HTML + Live Server)
+* Document upload + processing
 * Chunking + retrieval system
 * RAG (Retrieval-Augmented Generation)
-* LLM integration (via OpenRouter, replaceable)
-* Guide mode for user onboarding
-* Clean modular architecture
+* LLM integration (OpenRouter, replaceable)
+* Session-based mascot behavior
 
 ---
 
 ## 🧠 How It Works
 
-### Guide Mode
+### 🟢 Guide Mode (Mascot)
 
-* Explains how the platform works
-* Uses LLM directly
-* No document restriction
+* Automatically triggered for new users
+* Walks users through the platform step-by-step
+* Provides onboarding assistance
+* Intent-aware (basic keyword detection)
 
-### RAG Mode
+---
+
+### 🔵 RAG Mode
 
 * Retrieves relevant document chunks
 * Sends context to LLM
-* Strictly answers from documents
+* Generates answers strictly from documents
 * Prevents hallucination
 
 ---
 
 ## 🔁 Flow
 
-```
-User → API → Mode Selection
-     → Guide → LLM → Answer
-     → RAG → Retrieve → LLM → Answer
+```id="flow1"
+User → UI → API → Session Check
+     → Guide Mode → LLM → Answer
+     → RAG Mode → Retrieve → LLM → Answer
 ```
 
 ---
 
 ## 📁 Project Structure
 
-```
+```id="flow2"
 app/
 ├── api/            # FastAPI routes
-├── agent/          # core logic (future expansion)
 ├── retriever/      # chunking, storage, search
-├── llm/            # model integration
+├── llm/            # LLM integration
+├── utils/          # session handling
+
+index.html          # basic UI
+main_api.py         # FastAPI entry
 ```
 
 ---
@@ -62,51 +68,52 @@ app/
 
 ### 1. Install dependencies
 
-```
+```id="cmd1"
 pip install fastapi uvicorn python-multipart requests python-dotenv
 ```
+
+---
 
 ### 2. Add environment variables
 
 Create `.env`:
 
-```
+```id="cmd2"
 OPENROUTER_API_KEY=your_api_key
 ```
 
 ---
 
-### 3. Run server
+### 3. Run backend
 
-```
+```id="cmd3"
 uvicorn main_api:app --reload
 ```
 
 ---
 
-### 4. Test API
+### 4. Run UI
 
-Open:
+Use VS Code **Live Server** on:
 
-```
-http://127.0.0.1:8000/docs
+```id="cmd4"
+index.html
 ```
 
 ---
 
-## 📄 Endpoints
+## 📄 API Endpoints
 
 ### POST `/upload`
 
-Upload a `.txt` file → chunked and stored
+Upload `.txt` file → chunked and stored
 
 ### POST `/chat`
 
-```json
+```json id="cmd5"
 {
   "user_id": "1",
-  "message": "your question",
-  "mode": "guide" // or "rag"
+  "message": "your question"
 }
 ```
 
@@ -114,35 +121,36 @@ Upload a `.txt` file → chunked and stored
 
 ## 🧭 Roadmap
 
-* [ ] Session-based mascot behavior
-* [ ] Improved retrieval accuracy
-* [ ] Vector database (Supabase pgvector)
-* [ ] Persistent storage
-* [ ] Frontend integration
+* [ ] Improve mascot intelligence
+* [ ] Improve retrieval accuracy
+* [ ] Add embeddings (semantic search)
+* [ ] Persist sessions (Supabase)
+* [ ] Improve UI (React)
 * [ ] Multi-project support
 
 ---
 
 ## 🧩 Design Philosophy
 
-* Modular LLM layer (swap providers easily)
+* Backend-driven logic
+* Modular LLM layer
 * Clear separation of Guide vs RAG
-* Backend-first development
 * Incremental complexity
+* Avoid overengineering early
 
 ---
 
 ## ⚠️ Notes
 
-* `.env` is ignored (API keys are safe)
-* Current retrieval is keyword-based (no embeddings yet)
-* Designed for scalability
+* Sessions are in-memory (reset on restart)
+* Retrieval is keyword-based
+* UI is for testing purposes
 
 ---
 
 ## 🎯 Goal
 
-Build a reusable AI assistant that acts as a “mascot” for any platform, helping users both:
+Build a reusable AI assistant that can act as a **“mascot” for any platform**, helping users:
 
-* learn the system (Guide Mode)
+* understand the system (Guide Mode)
 * query knowledge (RAG Mode)
