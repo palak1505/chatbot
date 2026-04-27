@@ -1,156 +1,154 @@
-# 🤖 AI Mascot Assistant
+# AI Mascot Assistant
 
-An AI-powered assistant that combines:
-
-* 🟢 Guided onboarding (Mascot Mode)
-* 🔵 Document-based Q&A (RAG Mode)
+An AI-powered assistant that combines guided onboarding (Mascot) and document-based Q&A (RAG) into a single modular backend.
 
 ---
 
-## 🚀 Features
+## Features
 
-* FastAPI backend
-* Basic UI (HTML + Live Server)
-* Document upload + processing
-* Chunking + retrieval system
-* RAG (Retrieval-Augmented Generation)
-* LLM integration (OpenRouter, replaceable)
-* Session-based mascot behavior
+**Guide Mode (Mascot)**
+- Automatically triggered for new users
+- Intent-aware onboarding — detects what the user is asking about and jumps to the relevant step
+- Supports skip, help, and topic-jump intents via keyword detection
+- Can be manually toggled from the UI (Auto / Guide / RAG)
+- Step progress persisted in Supabase
 
----
-
-## 🧠 How It Works
-
-### 🟢 Guide Mode (Mascot)
-
-* Automatically triggered for new users
-* Walks users through the platform step-by-step
-* Provides onboarding assistance
-* Intent-aware (basic keyword detection)
+**RAG Mode**
+- Upload `.txt` or `.docx` documents
+- TF-IDF retrieval with cosine similarity scoring
+- Score threshold filters out irrelevant chunks before sending to LLM
+- Strict anti-hallucination prompt — answers only from uploaded context
 
 ---
 
-### 🔵 RAG Mode
+## Tech Stack
 
-* Retrieves relevant document chunks
-* Sends context to LLM
-* Generates answers strictly from documents
-* Prevents hallucination
+| Layer | Technology |
+|---|---|
+| Backend | FastAPI |
+| LLM | OpenRouter (meta-llama/llama-3-8b-instruct) |
+| Retrieval | TF-IDF + cosine similarity (scikit-learn) |
+| Sessions | Supabase (Postgres) |
+| Frontend | HTML + CSS + JS (Live Server) |
 
 ---
 
-## 🔁 Flow
+## Project Structure
 
-```id="flow1"
-User → UI → API → Session Check
-     → Guide Mode → LLM → Answer
-     → RAG Mode → Retrieve → LLM → Answer
 ```
-
----
-
-## 📁 Project Structure
-
-```id="flow2"
 app/
-├── api/            # FastAPI routes
-├── retriever/      # chunking, storage, search
-├── llm/            # LLM integration
-├── utils/          # session handling
+├── api/
+│   └── routes.py        # /chat, /upload, /mascot/toggle endpoints
+├── retriever/
+│   ├── chunker.py        # word-based text splitting
+│   ├── store.py          # in-memory document store
+│   └── search.py         # TF-IDF retrieval with score threshold
+├── llm/
+│   └── gemini_client.py  # OpenRouter API wrapper
+└── utils/
+    └── session_store.py  # Supabase-backed session management
 
-index.html          # basic UI
-main_api.py         # FastAPI entry
+config/
+└── settings.py           # env var loading
+
+index.html                # chat UI
+main_api.py               # FastAPI entry point
 ```
 
 ---
 
-## ⚙️ Setup
+## Setup
 
 ### 1. Install dependencies
 
-```id="cmd1"
-pip install fastapi uvicorn python-multipart requests python-dotenv
+```bash
+pip install -r requirements.txt
 ```
 
----
+### 2. Create `.env`
 
-### 2. Add environment variables
-
-Create `.env`:
-
-```id="cmd2"
-OPENROUTER_API_KEY=your_api_key
+```
+OPENROUTER_API_KEY=your_openrouter_key
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_KEY=your_anon_key
 ```
 
----
+### 3. Create Supabase table
 
-### 3. Run backend
+Run in Supabase SQL Editor:
 
-```id="cmd3"
+```sql
+create table user_sessions (
+    user_id text primary key,
+    is_new_user boolean default true,
+    mascot_enabled boolean default true,
+    guide_step integer default 0,
+    updated_at timestamp default now()
+);
+
+alter table user_sessions disable row level security;
+```
+
+### 4. Run the server
+
+```bash
 uvicorn main_api:app --reload
 ```
 
----
+### 5. Open the UI
 
-### 4. Run UI
-
-Use VS Code **Live Server** on:
-
-```id="cmd4"
-index.html
-```
+Open `index.html` via VS Code Live Server.
 
 ---
 
-## 📄 API Endpoints
+## API Endpoints
 
-### POST `/upload`
+### `POST /chat`
 
-Upload `.txt` file → chunked and stored
-
-### POST `/chat`
-
-```json id="cmd5"
+```json
 {
-  "user_id": "1",
-  "message": "your question"
+  "user_id": "user_1",
+  "message": "how do I upload a file?",
+  "mode": null
 }
 ```
 
----
+`mode` is optional — pass `"guide"` or `"rag"` to override auto-detection, or omit for automatic.
 
-## 🧭 Roadmap
+### `POST /upload`
 
-* [ ] Improve mascot intelligence
-* [ ] Improve retrieval accuracy
-* [ ] Add embeddings (semantic search)
-* [ ] Persist sessions (Supabase)
-* [ ] Improve UI (React)
-* [ ] Multi-project support
+Upload a `.txt` or `.docx` file. Returns chunk count.
 
----
+### `POST /mascot/toggle`
 
-## 🧩 Design Philosophy
-
-* Backend-driven logic
-* Modular LLM layer
-* Clear separation of Guide vs RAG
-* Incremental complexity
-* Avoid overengineering early
+```
+?user_id=user_1&enable=true
+```
 
 ---
 
-## ⚠️ Notes
+## Flow
 
-* Sessions are in-memory (reset on restart)
-* Retrieval is keyword-based
-* UI is for testing purposes
+```
+User → UI → POST /chat
+         → Auto mode: new user → Guide Mode
+                      returning user → RAG Mode
+         → Manual mode: forced Guide or RAG
+
+Guide Mode → intent detection → step response
+RAG Mode   → TF-IDF search → top-K chunks → LLM → answer
+```
 
 ---
 
-## 🎯 Goal
+## Roadmap
 
-Build a reusable AI assistant that can act as a **“mascot” for any platform**, helping users:
-
-* understand the system (Guide Mode)
-* query knowledge (RAG Mode)
+- [x] TF-IDF retrieval with score threshold
+- [x] Intent-aware mascot (skip, help, topic jump)
+- [x] Supabase session persistence
+- [x] .docx upload support
+- [x] Mode toggle in UI (Auto / Guide / RAG)
+- [ ] Semantic search with embeddings
+- [ ] Multi-project / knowledge base support
+- [ ] React frontend
+- [ ] User authentication

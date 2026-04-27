@@ -1,2 +1,8 @@
+fastapi
+uvicorn
+python-multipart
 google-generativeai
 python-dotenv
+scikit-learn
+supabase
+python-docx

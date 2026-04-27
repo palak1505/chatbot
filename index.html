@@ -1,86 +1,446 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>AI Mascot</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Mascot Assistant</title>
     <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
         body {
-            font-family: Arial;
-            max-width: 600px;
-            margin: auto;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
         }
+
+        .container {
+            width: 420px;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: #4f46e5;
+            color: #fff;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .header .avatar {
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        .header h1 { font-size: 16px; font-weight: 600; }
+        .header p  { font-size: 12px; opacity: 0.8; margin-top: 2px; }
+
+        /* User ID bar */
+        .user-bar {
+            background: #f8f8ff;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #6b7280;
+        }
+        .user-bar input {
+            flex: 1;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            padding: 5px 10px;
+            font-size: 13px;
+            outline: none;
+        }
+        .user-bar input:focus { border-color: #4f46e5; }
+
+        .mode-toggle {
+            display: flex;
+            background: #e5e7eb;
+            border-radius: 8px;
+            padding: 3px;
+            gap: 2px;
+        }
+        .mode-toggle button {
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            color: #6b7280;
+            transition: all 0.15s;
+        }
+        .mode-toggle button.active-guide { background: #d1fae5; color: #065f46; }
+        .mode-toggle button.active-rag   { background: #dbeafe; color: #1e40af; }
+
+        /* Chat window */
         #chat {
-            border: 1px solid #ccc;
-            padding: 10px;
-            height: 300px;
-            overflow-y: scroll;
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-height: 340px;
+            max-height: 340px;
+            background: #f9fafb;
         }
-        .user { color: blue; }
-        .bot { color: green; margin-bottom: 10px; }
+
+        .message {
+            display: flex;
+            flex-direction: column;
+            max-width: 80%;
+        }
+        .message.user  { align-self: flex-end; align-items: flex-end; }
+        .message.bot   { align-self: flex-start; align-items: flex-start; }
+
+        .bubble {
+            padding: 10px 14px;
+            border-radius: 16px;
+            font-size: 14px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .message.user .bubble {
+            background: #4f46e5;
+            color: #fff;
+            border-bottom-right-radius: 4px;
+        }
+        .message.bot .bubble {
+            background: #fff;
+            color: #111;
+            border: 1px solid #e5e7eb;
+            border-bottom-left-radius: 4px;
+        }
+
+        .meta {
+            font-size: 11px;
+            color: #9ca3af;
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .mode-badge {
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+        .mode-badge.guide { background: #d1fae5; color: #065f46; }
+        .mode-badge.rag   { background: #dbeafe; color: #1e40af; }
+
+        /* Typing indicator */
+        .typing .bubble {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            padding: 12px 16px;
+        }
+        .dots { display: flex; gap: 4px; align-items: center; }
+        .dots span {
+            width: 7px; height: 7px;
+            background: #9ca3af;
+            border-radius: 50%;
+            animation: bounce 1.2s infinite;
+        }
+        .dots span:nth-child(2) { animation-delay: 0.2s; }
+        .dots span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes bounce {
+            0%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-6px); }
+        }
+
+        /* Input area */
+        .input-area {
+            padding: 12px 16px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            gap: 8px;
+            background: #fff;
+        }
+        .input-area input {
+            flex: 1;
+            border: 1px solid #d1d5db;
+            border-radius: 24px;
+            padding: 10px 16px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .input-area input:focus { border-color: #4f46e5; }
+        .input-area button {
+            background: #4f46e5;
+            color: #fff;
+            border: none;
+            border-radius: 24px;
+            padding: 10px 18px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .input-area button:hover    { background: #4338ca; }
+        .input-area button:disabled { background: #a5b4fc; cursor: not-allowed; }
+
+        /* Upload area */
+        .upload-area {
+            padding: 12px 16px;
+            border-top: 1px solid #e5e7eb;
+            background: #fafafa;
+        }
+        .upload-area label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: block;
+            margin-bottom: 8px;
+        }
+        .upload-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .file-label {
+            flex: 1;
+            border: 1px dashed #d1d5db;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 13px;
+            color: #6b7280;
+            cursor: pointer;
+            text-align: center;
+            transition: border-color 0.2s;
+        }
+        .file-label:hover { border-color: #4f46e5; color: #4f46e5; }
+        #file { display: none; }
+        .upload-btn {
+            background: #10b981;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .upload-btn:hover    { background: #059669; }
+        .upload-btn:disabled { background: #6ee7b7; cursor: not-allowed; }
+
+        #uploadStatus {
+            font-size: 12px;
+            margin-top: 6px;
+            min-height: 16px;
+        }
+        #uploadStatus.success { color: #059669; }
+        #uploadStatus.error   { color: #dc2626; }
     </style>
 </head>
 <body>
 
-<h2>🤖 AI Mascot</h2>
+<div class="container">
 
-<div id="chat"></div>
+    <div class="header">
+        <div class="avatar">🤖</div>
+        <div>
+            <h1>AI Mascot Assistant</h1>
+            <p>Ask me anything or upload a document</p>
+        </div>
+    </div>
 
-<input id="message" placeholder="Type message..." style="width:80%;" />
-<button onclick="sendMessage()">Send</button>
+    <div class="user-bar">
+        <span>User ID:</span>
+        <input id="userId" type="text" value="user_1" placeholder="Enter your user ID" />
+        <div class="mode-toggle">
+            <button id="btnAuto"  onclick="setMode('auto')"  class="active-rag">Auto</button>
+            <button id="btnGuide" onclick="setMode('guide')" >Guide</button>
+            <button id="btnRag"   onclick="setMode('rag')"   >RAG</button>
+        </div>
+    </div>
 
-<hr>
+    <div id="chat"></div>
 
-<h3>Upload Document</h3>
-<input type="file" id="file" />
-<button onclick="uploadFile()">Upload</button>
+    <div class="input-area">
+        <input id="message" type="text" placeholder="Type a message..." onkeydown="if(event.key==='Enter') sendMessage()" />
+        <button id="sendBtn" onclick="sendMessage()">Send</button>
+    </div>
 
-<p id="uploadStatus"></p>
+    <div class="upload-area">
+        <label>Upload Document</label>
+        <div class="upload-row">
+            <label class="file-label" id="fileLabel" for="file">Choose .txt or .docx</label>
+            <input type="file" id="file" accept=".txt,.docx" onchange="onFileChange()" />
+            <button class="upload-btn" id="uploadBtn" onclick="uploadFile()">Upload</button>
+        </div>
+        <p id="uploadStatus"></p>
+    </div>
+
+</div>
 
 <script>
-async function sendMessage() {
-    const message = document.getElementById("message").value;
+    let currentMode = "auto";
 
-    addMessage("You: " + message, "user");
+    function setMode(mode) {
+        currentMode = mode;
+        document.getElementById("btnAuto").className  = "";
+        document.getElementById("btnGuide").className = "";
+        document.getElementById("btnRag").className   = "";
+        if (mode === "auto")  document.getElementById("btnAuto").className  = "active-rag";
+        if (mode === "guide") document.getElementById("btnGuide").className = "active-guide";
+        if (mode === "rag")   document.getElementById("btnRag").className   = "active-rag";
+    }
 
-    const res = await fetch("http://127.0.0.1:8000/chat", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            user_id: "1",
-            message: message
-        })
-    });
+    function getUserId() {
+        return document.getElementById("userId").value.trim() || "user_1";
+    }
 
-    const data = await res.json();
+    function timestamp() {
+        return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    }
 
-    addMessage("Bot: " + data.response, "bot");
+    function addMessage(text, type, mode) {
+        const chat = document.getElementById("chat");
 
-    document.getElementById("message").value = "";
-}
+        const wrapper = document.createElement("div");
+        wrapper.className = `message ${type}`;
 
-function addMessage(text, cls) {
-    const chat = document.getElementById("chat");
-    const div = document.createElement("div");
-    div.className = cls;
-    div.innerText = text;
-    chat.appendChild(div);
-    chat.scrollTop = chat.scrollHeight;
-}
+        const bubble = document.createElement("div");
+        bubble.className = "bubble";
+        bubble.innerText = text;
 
-async function uploadFile() {
-    const fileInput = document.getElementById("file");
-    const formData = new FormData();
-    formData.append("file", fileInput.files[0]);
+        const meta = document.createElement("div");
+        meta.className = "meta";
+        meta.innerText = timestamp();
 
-    const res = await fetch("http://127.0.0.1:8000/upload", {
-        method: "POST",
-        body: formData
-    });
+        if (mode) {
+            const badge = document.createElement("span");
+            badge.className = `mode-badge ${mode}`;
+            badge.innerText = mode === "guide" ? "Guide" : "RAG";
+            meta.prepend(badge);
+        }
 
-    const data = await res.json();
-    document.getElementById("uploadStatus").innerText = data.message;
-}
+        wrapper.appendChild(bubble);
+        wrapper.appendChild(meta);
+        chat.appendChild(wrapper);
+        chat.scrollTop = chat.scrollHeight;
+    }
+
+    function showTyping() {
+        const chat = document.getElementById("chat");
+        const wrapper = document.createElement("div");
+        wrapper.className = "message bot typing";
+        wrapper.id = "typing";
+        wrapper.innerHTML = `<div class="bubble"><div class="dots"><span></span><span></span><span></span></div></div>`;
+        chat.appendChild(wrapper);
+        chat.scrollTop = chat.scrollHeight;
+    }
+
+    function removeTyping() {
+        const el = document.getElementById("typing");
+        if (el) el.remove();
+    }
+
+    async function sendMessage() {
+        const input = document.getElementById("message");
+        const sendBtn = document.getElementById("sendBtn");
+        const message = input.value.trim();
+        if (!message) return;
+
+        addMessage(message, "user");
+        input.value = "";
+        sendBtn.disabled = true;
+        showTyping();
+
+        try {
+            const res = await fetch("http://127.0.0.1:8000/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    user_id: getUserId(),
+                    message,
+                    mode: currentMode === "auto" ? null : currentMode
+                })
+            });
+            const data = await res.json();
+            removeTyping();
+            const mode = data.mode_used === "guide" ? "guide" : "rag";
+            addMessage(data.response, "bot", mode);
+        } catch (e) {
+            removeTyping();
+            addMessage("Error: could not reach the server.", "bot", null);
+        }
+
+        sendBtn.disabled = false;
+        input.focus();
+    }
+
+    function onFileChange() {
+        const file = document.getElementById("file").files[0];
+        const label = document.getElementById("fileLabel");
+        label.innerText = file ? file.name : "Choose .txt or .docx";
+        document.getElementById("uploadStatus").innerText = "";
+        document.getElementById("uploadStatus").className = "";
+    }
+
+    async function uploadFile() {
+        const fileInput = document.getElementById("file");
+        const status = document.getElementById("uploadStatus");
+        const uploadBtn = document.getElementById("uploadBtn");
+
+        if (!fileInput.files[0]) {
+            status.innerText = "Please choose a file first.";
+            status.className = "error";
+            return;
+        }
+
+        uploadBtn.disabled = true;
+        status.innerText = "Uploading...";
+        status.className = "";
+
+        const formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+
+        try {
+            const res = await fetch("http://127.0.0.1:8000/upload", {
+                method: "POST",
+                body: formData
+            });
+            const data = await res.json();
+            if (res.ok) {
+                status.innerText = `✓ ${data.message} (${data.chunks_added} chunks)`;
+                status.className = "success";
+            } else {
+                status.innerText = `✗ ${data.detail || "Upload failed."}`;
+                status.className = "error";
+            }
+        } catch (e) {
+            status.innerText = "✗ Could not reach the server.";
+            status.className = "error";
+        }
+
+        uploadBtn.disabled = false;
+    }
 </script>
 
 </body>
